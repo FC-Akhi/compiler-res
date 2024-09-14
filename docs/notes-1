@@ -1,0 +1,225 @@
+When to Use Each PredictionValuesChange: feature_score = cbc.get_feature_importance(type='PredictionValuesChange')
+PredictionValuesChange: Use it when you need a fast and reasonably accurate estimate of how much each feature influences predictions. It's efficient for large datasets like hyperspectral images.
+
+
+pip install catboost
+You get both the CPU and GPU versions of CatBoost by default.
+
+CatBoost will automatically detect if your system has a compatible GPU and will use the GPU if you specify it in the model's task_type parameter, like this:
+
+cbc = CatBoostClassifier(task_type='GPU')
+
+
+
+First test: catboost with GA and no band reduction-CPU
+
+
+Pavia u
+threshod accuracy: 79.93142612236151
+best band combination(60%) accuracy: 0.8013768348869602
+time_after_pavia_u: 318.4660348892212
+Total number of band in pavia u original: 103
+Number_of_bands selected: 61
+
+
+
+Pavia c
+threshod accuracy: 
+best band combination(60%) accuracy: 
+time_after_pavia_c: 
+Total number of band in pavia c original: 102
+Number_of_bands selected:
+
+
+
+Total whole code: 253.88964080810547
+
+
+
+
+
+79.93142612236151
+88.41361396105921
+Total number of band in pavia u original: 103
+Total number of band in pavia u original: 102
+time_after_pavia_u_with_ga:  308.7077782154083
+time_after_pavia_c_u_with_ga:  934.1291139125824
+Best combination for Pavia U: [51, 8, 81, 69, 62, 78, 94, 58, 53, 57, 67, 91, 31, 60, 79, 34, 9, 26, 14, 75, 101, 2, 61, 28, 27, 29, 4, 89, 32, 22, 15, 76, 39, 54, 41, 44, 3, 65, 74, 16, 12, 99, 80, 13, 98, 25, 37, 68, 5, 59, 63, 17, 33, 30, 0, 23, 102, 21, 100, 96, 48], Number of bands: 61, Accuracy: 0.8015589842494375
+Best combination for Pavia C: [70, 48, 80, 56, 36, 77, 16, 1, 9, 26, 0, 31, 5, 19, 94, 43, 54, 99, 49, 25, 38, 8, 100, 91, 24, 78, 101, 75, 22, 97, 53, 51, 13, 86, 42, 52, 95, 33, 57, 90, 44, 20, 55, 58, 69, 39, 35, 68, 18, 87, 28, 67, 30, 34, 47, 72, 74, 89, 85, 73, 61], Number of bands: 61, Accuracy: 0.884568594422609
+1259.6519210338593
+
+
+
+
+
+
+
+Second test
+
+catboost with feature score based band reduction + GA
+Pavia u
+accuracy: 
+time_after_pavia_u: 
+
+
+Pavia c
+accuracy: 
+time_after_pavia_c:
+
+total: time_after_both_dataset: 
+
+Total whole code:
+
+
+
+
+
+
+
+
+
+
+
+==============================================+++++++++++++++++++++++++++++++++++++++++++++======================================+++++++++++++++++++++++++++++======================
+    cbc = CatBoostClassifier(
+        iterations=1000,               # Number of trees (iterations)
+        learning_rate=0.1,             # Step size shrinkage
+        depth=6,                       # Maximum depth of the tree
+        loss_function='MultiClass',    # Loss function for multi-class classification
+        class_weights=class_weights_dict,  # Add class weights here
+        eval_metric='Accuracy',        # Evaluation metric
+        random_seed=random_state,      # Seed for reproducibility
+        task_type='CPU',               # Set to 'CPU' or 'GPU'
+        early_stopping_rounds=50,      # Early stopping to avoid overfitting
+        custom_metric=['Accuracy']     # Custom metric for reporting
+    )
+
+
+
+
+CPU(Only catboost)
+Pavia University - Training Time: 220.57 sec, Accuracy: 57.90%
+Pavia Centre - Training Time: 852.24 sec, Accuracy: 57.18%
+Salinas - Training Time: 483.43 sec, Accuracy: 87.74%
+Indian Pines - Training Time: 159.87 sec, Accuracy: 71.44%
+
+GPU(Only catboost)
+Pavia University - Training Time: 17.63 sec, Accuracy: 57.96%
+Pavia Centre - Training Time: 41.10 sec, Accuracy: 57.74%
+Salinas - Training Time: 35.68 sec, Accuracy: 87.59%
+Indian Pines - Training Time: 23.54 sec, Accuracy: 72.41%
+
+=================================================================++++++++++++++++++++++++++++++++++++++++++++++++========================++++++++++++++++++++++++++++++++++=================
+inside baseline
+    cbc = CatBoostClassifier(
+        iterations=1000,               # Number of trees (iterations)
+        learning_rate=0.1,             # Step size shrinkage
+        depth=6,                       # Maximum depth of the tree
+        loss_function='MultiClass',    # Loss function for multi-class classification
+        class_weights=class_weights_dict,  # Add class weights here
+        eval_metric='Accuracy',        # Evaluation metric
+        random_seed=random_state,      # Seed for reproducibility
+        task_type='CPU',               # Set to 'CPU' or 'GPU'
+        early_stopping_rounds=50,      # Early stopping to avoid overfitting
+        custom_metric=['Accuracy']     # Custom metric for reporting
+    )
+
+
+inside black bock
+
+    cbc = CatBoostClassifier(
+        iterations=2,               # Number of trees (iterations)
+        learning_rate=0.1,             # Step size shrinkage
+        depth=6,                       # Maximum depth of the tree
+        loss_function='MultiClass',    # Loss function for multi-class classification
+        class_weights=class_weights_dict,  # Add class weights here
+        eval_metric='Accuracy',        # Evaluation metric
+        random_seed=random_state,      # Seed for reproducibility
+        task_type='CPU',               # Set to 'CPU' or 'GPU'
+        early_stopping_rounds=50,      # Early stopping to avoid overfitting
+        custom_metric=['Accuracy']     # Custom metric for reporting
+    )
+
+
+
+CPU(Only catboost + GA(60% band combination size out of original pool))
+
+
+
+
+GPU(Only catboost + GA(60% band combination size out of original pool))
+
+
+
+
+feature score doesnot come properly if i balance data
+
+Balance the dataset (e.g., SMOTE, undersampling): Train CatBoost without class_weights to get meaningful feature scores and good accuracy.
+Post-training reweighting: Train CatBoost without class_weights for feature scores, then reweight accuracy afterward.
+
+feature score ber kora 
+then shetar upore depend kore band reduce korsi using median-based technique
+ar shai reduced set of band dia model train kore accuracy bair korsi - threshold
+
+
+
+
+
+Justification Breakdown for SMOTE:
+Imbalanced Data and Classifier Performance:
+
+When using imbalanced data without any balancing techniques (such as class_weights in CatBoost or SMOTE), you observed high accuracy. However, the classification map was full of noise, meaning the classifier was likely overfitting to the majority class, leading to inflated accuracy but poor generalization on the minority classes.
+Using class_weights in CatBoost:
+
+To address this imbalance, you applied class_weights. This helps ensure that the classifier doesn't overly focus on the majority class by assigning higher weights to the minority class samples.
+As a result, you observed lower accuracy (which is expected because the model is now penalizing misclassifications more evenly across all classes), but the classification map was more logically correct (indicating the classifier was performing better on minority classes).
+However, when using class_weights, you observed that the feature importances in CatBoost were heavily skewed, with many zeros. This is likely due to how the model is being forced to prioritize balancing the classes over leveraging the most important features.
+Feature Scores with and without class_weights:
+
+Without class_weights, you obtained feature scores from CatBoost that were similar to what you would expect from XGBoost. This is because without the extra class-balancing constraint, the model can focus on the features that maximize accuracy (which might inadvertently favor the majority class).
+When using class_weights, the model shifts its focus toward class balancing, which can distort feature importance because the model is penalizing based on class distribution rather than just feature-based performance.
+Switching to SMOTE:
+
+To overcome the issue with CatBoost’s class_weights impacting feature scores, you decided to apply SMOTE (Synthetic Minority Over-sampling Technique) as a pre-processing step to balance the dataset before passing it to the classifier.
+By using SMOTE, you’re synthetically balancing the data by generating new samples for the minority classes, ensuring the classifier doesn’t need to internally adjust for imbalance. This allows you to avoid using class_weights in CatBoost, which in turn lets the model compute more accurate feature importances.
+Refined Justification:
+You observed that using class_weights in CatBoost helped balance the class distribution and improved the logical correctness of the classification map. However, it distorted the feature importance scores by prioritizing class balancing over feature-based accuracy. To address this, you chose to apply SMOTE as a data pre-processing step. This ensures that the dataset is balanced before training, allowing you to avoid using class_weights in CatBoost, which leads to more meaningful feature importance scores. With SMOTE, you aim to retain both a balanced classification performance and meaningful feature importances.
+
+Conclusion:
+Your approach to balancing the dataset using SMOTE is a reasonable strategy to avoid the impact of class_weights on feature importance, while still addressing class imbalance. This approach can help you maintain meaningful feature importance scores while ensuring that the model performs well on both majority and minority classes.
+
+
+
+
+
+About featurescore parameter
+In CatBoost, some feature importance types (like PredictionValuesChange) do not require access to the training dataset after training the model, while others (like LossFunctionChange and ShapValues) do require the training dataset to compute the importance scores.
+
+
+
+
+Test case 1
+PredictionValuesChange + new threshold accuracy from reduced band classification
+
+
+
+Test case 2
+LossFunctionChange + new threshold accuracy from reduced band classification
+
+
+
+Test case 3
+ShapValues + new threshold accuracy from reduced band classification
+
+
+
+
+
+
+
+
+
+
+
+
+

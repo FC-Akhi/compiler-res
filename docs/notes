@@ -1,0 +1,58 @@
+Other papers claim
+
+
+X Fader papers claim
+
+
+My holy grail papers claim
+
+
+Feature Score generation & collection: the feature scores for the bands of a hyperspectral image (HSI) are generated using XGBoost's feature importance mechanism. Feature importance scores from XGBoost (referred to as feature scores) are a popular method for identifying important bands in hyperspectral images
+
+
+Input Reshaping: The hyperspectral image data is reshaped from 3D to 2D for use in the machine learning model.
+
+Data Splitting: The reshaped data is split into training and testing sets.
+
+XGBoost Model Training: An XGBoost classifier is trained on the training data.
+
+Feature Importance Extraction: After training, the feature importance scores (one for each spectral band) are extracted from the trained XGBoost model.
+After training the XGBoost model, the feature importance scores are collected from the trained model. XGBoost automatically calculates and provides these scores based on how much each feature (spectral band) contributed to improving the model’s performance. The feature importance is calculated based on:
+
+Gain: The improvement in accuracy brought by a feature in splitting nodes in the decision trees.
+Frequency: The number of times a feature is used in the trees.
+
+
+Return Feature Scores: The function returns the feature scores, which rank the spectral bands based on their contribution to classification accuracy.
+
+
+
+Next
+
+get_reduced_bands() function takes a list of feature importance scores (presumably calculated using the find_feature_score() function) and reduces the number of hyperspectral bands by selecting those with scores higher than or equal to the median. It also identifies and returns the bands with lower feature scores, which could be discarded or considered less important.
+
+The function is performing band reduction in a hyperspectral image by:
+
+Ranking the feature scores: It sorts the feature importance scores in descending order to rank the spectral bands based on how important they are for the task (e.g., classification).
+Thresholding using the median: It computes the median of the feature scores and uses this value as a cutoff. Bands with scores higher than or equal to the median are kept, while bands with scores below the median are marked for deletion.
+Returning the important bands: It returns the important bands (those above the median) along with their indices, and also returns the indices of the discarded bands.
+
+Using the median as a threshold ensures that roughly half of the bands are retained, while the other half (those with lower scores) are discarded. This is a simple yet effective way to reduce the dimensionality of the hyperspectral image by keeping only the most important bands.
+
+
+
+Time to run the raw previous code in my system: 13.333mins or 800 secs
+
+
+
+number of bands per solution pavia u:  47
+number of bands per solution pavia c:  46
+[90, 84, 34, 68, 85, 61, 100, 25, 77, 76, 69, 98, 70, 97, 31, 42, 75, 45, 59, 35, 102, 12, 24, 63, 91, 80, 11, 66, 28, 30, 62, 82, 17, 67, 40, 16, 64, 32, 21, 101, 94, 27, 92, 65, 60, 13, 15]
+
+
+
+
+
+I mean that the classification map should predict the class labels for all the pixels in the image—using a reduced set of bands as selected by the genetic algorithm.
+
+
