@@ -47,34 +47,34 @@ def visualize_classification_map(classification_map, ground_truth_map, dataset_n
     filepath = os.path.join('m', f"{dataset_name}_classification_vs_ground_truth.png")
     plt.savefig(filepath)
     print(f"Figure saved as {filepath}")
-
-
-
-
-
+# Revised code (with mentioned changes)
 def model_train_test(hsi_image, gt, hsi_image_limited, test_size=0.2, random_state=42):
     """
     Train CatBoost model using hsi_image_limited and return accuracy, training time, and classification maps.
     """
-
-    # Reshape the image into a 2D array of samples and bands
     n_samples = hsi_image.shape[0] * hsi_image.shape[1]
     n_bands = hsi_image.shape[2]
-    hsi_image_reshaped = hsi_image.reshape(n_samples, n_bands)
+    
+    # Reshape ground truth to a 1D array for stratification
+    gt_reshaped = gt.reshape(-1)
 
     # Split the reshaped data into train/test
     X_train, X_test, y_train, y_test = train_test_split(
-        hsi_image_limited, gt.reshape(-1), stratify=gt.reshape(-1), test_size=test_size, random_state=random_state)
+        hsi_image_limited, gt_reshaped, stratify=gt_reshaped, test_size=test_size, random_state=random_state)
+
+    # Further split training data to create a validation set
+    X_train, X_valid, y_train, y_valid = train_test_split(X_train, y_train, test_size=0.2, random_state=random_state)
 
     # Create CatBoost classifier
     cbc = CatBoostClassifier(
-        task_type='GPU',
-        verbose=False
+        task_type='CPU',
+        verbose=False,
+        random_seed=random_state  # Ensure reproducibility
     )
 
-    # Train the model (include early stopping with test set as validation)
+    # Train the model with validation data for early stopping
     start = time.time()
-    cbc.fit(X_train, y_train, eval_set=(X_test, y_test))
+    cbc.fit(X_train, y_train, eval_set=(X_valid, y_valid), early_stopping_rounds=50)
     end = time.time()
     total_time = end - start
 
@@ -84,27 +84,26 @@ def model_train_test(hsi_image, gt, hsi_image_limited, test_size=0.2, random_sta
 
     # Generate classification map for the entire dataset
     y_pred_full = cbc.predict(hsi_image_limited)
-
-    # Reshape predictions and ground truth for visualization
     classification_map = y_pred_full.reshape(hsi_image.shape[0], hsi_image.shape[1])
     ground_truth_map = gt.reshape(hsi_image.shape[0], hsi_image.shape[1])
 
     # Print classification report and confusion matrix
     print("Classification Report:")
-    print(classification_report(gt.reshape(-1), y_pred_full))
+    print(classification_report(gt_reshaped, y_pred_full))
 
     print("Confusion Matrix:")
-    print(confusion_matrix(gt.reshape(-1), y_pred_full))
+    print(confusion_matrix(gt_reshaped, y_pred_full))
 
     # Return accuracy, training time, and classification maps
     return acc, total_time, classification_map, ground_truth_map
+
+
 
 
 def ICA(hsi_image, gt, n_components=20):
     """
     Apply ICA to reduce dimensions of hsi_image and train CatBoost model.
     """
-    # Reshape hyperspectral image (height, width, bands) into (samples, bands)
     n_samples = hsi_image.shape[0] * hsi_image.shape[1]
     n_bands = hsi_image.shape[2]
     hsi_image_reshaped = hsi_image.reshape(n_samples, n_bands)
@@ -113,8 +112,10 @@ def ICA(hsi_image, gt, n_components=20):
     scaler = StandardScaler()
     hsi_image_scaled = scaler.fit_transform(hsi_image_reshaped)
 
+    # Ensure the number of components does not exceed the number of bands
     if n_components > n_bands:
-        raise ValueError("Number of components exceeds the number of bands in the image.")
+        print(f"Reducing number of components to {n_bands} (number of bands).")
+        n_components = n_bands
 
     # Apply ICA
     ica = FastICA(n_components=n_components, random_state=42)
@@ -123,22 +124,13 @@ def ICA(hsi_image, gt, n_components=20):
     # Train the CatBoost model using the reduced data
     acc, total_time, classification_map, ground_truth_map = model_train_test(hsi_image, gt, hsi_image_limited)
 
-    # Return the results
     return acc, total_time, classification_map, ground_truth_map
 
 
-# Use the same code to call the ICA and model train-test for Salinas, but this time:
-# - Count the number of unique classes in the ground truth to ensure the color mapping works properly.
 
-# Load the dataset for Salinas or Indian Pines as per your needs
-salinas = scipy.io.loadmat('contents/data/Salinas.mat')['salinas']
-salinas_gt = scipy.io.loadmat('contents/data/Salinas_gt.mat')['salinas_gt']
-
-# Get the unique number of classes in the ground truth
-n_classes = len(np.unique(salinas_gt))
 
 # Train, test, and visualize for Salinas
-acc_salinas, training_time_salinas, classification_map_salinas, ground_truth_map_salinas = ICA(salinas, salinas_gt)
-map_colors(classification_map_salinas, ground_truth_map_salinas, "Salinas", n_classes)
+acc_pavia_c, training_time_pavia_c, classification_map_pavia_c, ground_truth_map_pavia_c = ICA(pavia_c, pavia_c_gt)
+visualize_classification_map(classification_map_pavia_c, ground_truth_map_pavia_c, "pavia_c")
 
-print(f"Salinas - Training Time: {training_time_salinas:.2f} sec, Accuracy: {acc_salinas * 100:.2f}%")
+print(f"pavia_c - Training Time: {training_time_pavia_c:.2f} sec, Accuracy: {acc_pavia_c * 100:.2f}%")
