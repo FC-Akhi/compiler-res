@@ -106,7 +106,7 @@ def visualize_classification_map(classification_map, ground_truth_map, dataset_n
     plt.axis('off')  # Hide axes
 
     # Ensure the directory for saving the map exists, create it if it doesn't
-    filepath = os.path.join('maps', f"{dataset_name}_classification_vs_ground_truth.png")
+    filepath = os.path.join('maps/1.baseline_GPU', f"{dataset_name}_classification_vs_ground_truth.png")
     os.makedirs('maps/1.baseline_GPU', exist_ok=True)
     
     # Save the figure as an image
@@ -241,8 +241,8 @@ def model_train_test(hsi_image, gt, test_size=0.2, random_state=42):
     # Reshape the ground truth labels back to the original image dimensions (height x width)
     ground_truth_map = gt.reshape(hsi_image.shape[0], hsi_image.shape[1])
 
-    params = cbc.get_all_params()
-    print("Full parameters:", params)
+    # params = cbc.get_all_params()
+    # print("Full parameters:", params)
 
     # Return the accuracy, training time, classification map, and ground truth map
     return acc, total_time, classification_map, ground_truth_map
@@ -256,8 +256,8 @@ def model_train_test(hsi_image, gt, test_size=0.2, random_state=42):
 pavia_u = scipy.io.loadmat('contents/data/PaviaU.mat')['paviaU']
 pavia_u_gt = scipy.io.loadmat('contents/data/PaviaU_gt.mat')['paviaU_gt']
 
-# Analyze data set class distribution
-analyze_class_distribution(pavia_u_gt, 'pavia_u')
+# # Analyze data set class distribution
+# analyze_class_distribution(pavia_u_gt, 'pavia_u')
 
 
 # Train, test, and visualize for Pavia University
@@ -276,8 +276,8 @@ visualize_classification_map(classification_map_pavia_u, ground_truth_map_pavia_
 pavia_c = scipy.io.loadmat('contents/data/Pavia.mat')['pavia']
 pavia_c_gt = scipy.io.loadmat('contents/data/Pavia_gt.mat')['pavia_gt']
 
-# Analyze data set class distribution
-analyze_class_distribution(pavia_c_gt, 'pavia_c')
+# # Analyze data set class distribution
+# analyze_class_distribution(pavia_c_gt, 'pavia_c')
 
 
 # Train, test, and visualize for Pavia University
@@ -296,8 +296,8 @@ visualize_classification_map(classification_map_pavia_c, ground_truth_map_pavia_
 salinas = scipy.io.loadmat('contents/data/Salinas.mat')['salinas']
 salinas_gt = scipy.io.loadmat('contents/data/Salinas_gt.mat')['salinas_gt']
 
-# Analyze data set class distribution
-analyze_class_distribution(salinas_gt, 'salinas')
+# # Analyze data set class distribution
+# analyze_class_distribution(salinas_gt, 'salinas')
 
 
 # Train, test, and visualize for Pavia University
@@ -310,20 +310,20 @@ visualize_classification_map(classification_map_salinas, ground_truth_map_salina
 
 
 
-# Load dataset-Indian Pines
-indian_pines = scipy.io.loadmat('contents/data/Indian_pines.mat')['indian_pines']
-indian_pines_gt = scipy.io.loadmat('contents/data/Indian_pines_gt.mat')['indian_pines_gt']
+# # Load dataset-Indian Pines
+# indian_pines = scipy.io.loadmat('contents/data/Indian_pines.mat')['indian_pines']
+# indian_pines_gt = scipy.io.loadmat('contents/data/Indian_pines_gt.mat')['indian_pines_gt']
 
-# Analyze data set class distribution
-analyze_class_distribution(indian_pines_gt, 'indian_pines')
-
-
-# Train, test, and visualize for Pavia University
-acc_indian_pines, training_time_indian_pines, classification_map_indian_pines, ground_truth_map_indian_pines = model_train_test(indian_pines, indian_pines_gt)
+# # Analyze data set class distribution
+# analyze_class_distribution(indian_pines_gt, 'indian_pines')
 
 
-# visualize classification map vs ground truth
-visualize_classification_map(classification_map_indian_pines, ground_truth_map_indian_pines, "Indian Pines")
+# # Train, test, and visualize for Pavia University
+# acc_indian_pines, training_time_indian_pines, classification_map_indian_pines, ground_truth_map_indian_pines = model_train_test(indian_pines, indian_pines_gt)
+
+
+# # visualize classification map vs ground truth
+# visualize_classification_map(classification_map_indian_pines, ground_truth_map_indian_pines, "Indian Pines")
 
 
 
@@ -335,8 +335,8 @@ print(f"Pavia University - Training Time: {training_time_pavia_u:.2f} sec, Accur
 print(f"Pavia Centre - Training Time: {training_time_pavia_c:.2f} sec, Accuracy: {acc_pavia_c * 100:.2f}%")
 # Print accuracies and training times
 print(f"Salinas - Training Time: {training_time_salinas:.2f} sec, Accuracy: {acc_salinas * 100:.2f}%")
-# Print accuracies and training times
-print(f"Indian Pines - Training Time: {training_time_indian_pines:.2f} sec, Accuracy: {acc_indian_pines * 100:.2f}%")
+# # Print accuracies and training times
+# print(f"Indian Pines - Training Time: {training_time_indian_pines:.2f} sec, Accuracy: {acc_indian_pines * 100:.2f}%")
 
 
 

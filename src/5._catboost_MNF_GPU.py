@@ -67,15 +67,8 @@ def model_train_test(hsi_image, gt, hsi_image_limited, test_size=0.2, random_sta
 
     # Create CatBoost classifier
     cbc = CatBoostClassifier(
-        iterations=1000,
-        learning_rate=0.1,
-        depth=6,
-        loss_function='MultiClass',
-        eval_metric='Accuracy',
-        random_seed=random_state,
         task_type='GPU',
-        early_stopping_rounds=50,
-        custom_metric=['Accuracy']
+        verbose=False
     )
 
     
@@ -185,42 +178,42 @@ def MNF(hsi_image, gt, n_components=10):
 
 
 # Load datasets
-pavia_u = scipy.io.loadmat('src2/PaviaU.mat')['paviaU']
-pavia_u_gt = scipy.io.loadmat('src2/PaviaU_gt.mat')['paviaU_gt']
+# pavia_u = scipy.io.loadmat('src2/PaviaU.mat')['paviaU']
+# pavia_u_gt = scipy.io.loadmat('src2/PaviaU_gt.mat')['paviaU_gt']
 
-pavia_c = scipy.io.loadmat('src2/Pavia.mat')['pavia']
-pavia_c_gt = scipy.io.loadmat('src2/Pavia_gt.mat')['pavia_gt']
+# pavia_c = scipy.io.loadmat('src2/Pavia.mat')['pavia']
+# pavia_c_gt = scipy.io.loadmat('src2/Pavia_gt.mat')['pavia_gt']
 
 salinas = scipy.io.loadmat('src2/Salinas.mat')['salinas']
 salinas_gt = scipy.io.loadmat('src2/Salinas_gt.mat')['salinas_gt']
 
-indian_pines = scipy.io.loadmat('src2/Indian_pines.mat')['indian_pines']
-indian_pines_gt = scipy.io.loadmat('src2/Indian_pines_gt.mat')['indian_pines_gt']
+# indian_pines = scipy.io.loadmat('src2/Indian_pines.mat')['indian_pines']
+# indian_pines_gt = scipy.io.loadmat('src2/Indian_pines_gt.mat')['indian_pines_gt']
 
 
 
 
-# Train, test, and visualize for Pavia University
-acc_pavia_u, training_time_pavia_u, classification_map_pavia_u, ground_truth_map_pavia_u = ICA(pavia_u, pavia_u_gt)
-visualize_classification_map(classification_map_pavia_u, ground_truth_map_pavia_u, "Pavia University")
+# # Train, test, and visualize for Pavia University
+# acc_pavia_u, training_time_pavia_u, classification_map_pavia_u, ground_truth_map_pavia_u = ICA(pavia_u, pavia_u_gt)
+# visualize_classification_map(classification_map_pavia_u, ground_truth_map_pavia_u, "Pavia University")
 
-# Train, test, and visualize for Pavia Centre
-acc_pavia_c, training_time_pavia_c, classification_map_pavia_c, ground_truth_map_pavia_c = ICA(pavia_c, pavia_c_gt)
-visualize_classification_map(classification_map_pavia_c, ground_truth_map_pavia_c, "Pavia Centre")
+# # Train, test, and visualize for Pavia Centre
+# acc_pavia_c, training_time_pavia_c, classification_map_pavia_c, ground_truth_map_pavia_c = ICA(pavia_c, pavia_c_gt)
+# visualize_classification_map(classification_map_pavia_c, ground_truth_map_pavia_c, "Pavia Centre")
 
 # Train, test, and visualize for Salinas
 acc_salinas, training_time_salinas, classification_map_salinas, ground_truth_map_salinas = ICA(salinas, salinas_gt)
 visualize_classification_map(classification_map_salinas, ground_truth_map_salinas, "Salinas")
 
-# Train, test, and visualize for Indian Pines
-acc_indian_pines, training_time_indian_pines, classification_map_indian_pines, ground_truth_map_indian_pines = ICA(indian_pines, indian_pines_gt)
-visualize_classification_map(classification_map_indian_pines, ground_truth_map_indian_pines, "Indian Pines")
+# # Train, test, and visualize for Indian Pines
+# acc_indian_pines, training_time_indian_pines, classification_map_indian_pines, ground_truth_map_indian_pines = ICA(indian_pines, indian_pines_gt)
+# visualize_classification_map(classification_map_indian_pines, ground_truth_map_indian_pines, "Indian Pines")
 
 
 
 
 # Print accuracies and training times
-print(f"Pavia University - Training Time: {training_time_pavia_u:.2f} sec, Accuracy: {acc_pavia_u * 100:.2f}%")
-print(f"Pavia Centre - Training Time: {training_time_pavia_c:.2f} sec, Accuracy: {acc_pavia_c * 100:.2f}%")
+# print(f"Pavia University - Training Time: {training_time_pavia_u:.2f} sec, Accuracy: {acc_pavia_u * 100:.2f}%")
+# print(f"Pavia Centre - Training Time: {training_time_pavia_c:.2f} sec, Accuracy: {acc_pavia_c * 100:.2f}%")
 print(f"Salinas - Training Time: {training_time_salinas:.2f} sec, Accuracy: {acc_salinas * 100:.2f}%")
-print(f"Indian Pines - Training Time: {training_time_indian_pines:.2f} sec, Accuracy: {acc_indian_pines * 100:.2f}%")
+# print(f"Indian Pines - Training Time: {training_time_indian_pines:.2f} sec, Accuracy: {acc_indian_pines * 100:.2f}%")
