@@ -715,6 +715,24 @@ solutions_pavia_u = genetic_algorithm(
 )
 
 
+
+
+
+
+best_combination = solutions_pavia_u[0][0]
+
+print("Best band combination:", best_combination)
+print(len(best_combination))
+
+print(f"PU - Accuracy: {solutions_pavia_u[0][1] * 100:.2f}%")
+
+print(f"PU - time_train: {solutions_pavia_u[0][2]}seconds")
+
+
+
+
+
+
 # candidate solution size per population
 no_of_bands_per_solution = get_size_of_single_combination(new_indices_list_pavia_c, percent_of_bands)
 
@@ -732,6 +750,15 @@ solutions_pavia_c = genetic_algorithm(
 )
 
 
+
+best_combination = solutions_pavia_u[0][0]
+
+print("Best band combination:", best_combination)
+print(len(best_combination))
+
+print(f"Pavia_c - Accuracy: {solutions_pavia_c[0][1] * 100:.2f}%")
+
+print(f"Pavia_c - time_train: {solutions_pavia_c[0][2]}seconds")
 
 
 
@@ -754,37 +781,15 @@ solutions_salinas = genetic_algorithm(
 
 
 
-best_combination = solutions_pavia_u[0][0]
+
+best_combination = solutions_salinas[0][0]
 
 print("Best band combination:", best_combination)
 print(len(best_combination))
 
-print(f"Indian Pines - Accuracy: {solutions_pavia_u[0][1] * 100:.2f}%")
+print(f"salinas - Accuracy: {solutions_salinas[0][1] * 100:.2f}%")
 
-print(f"Indian Pines - time_train: {solutions_pavia_u[0][2]}seconds")
-
-
-
-best_combination = solutions_pavia_c[0][0]
-
-print("Best band combination:", best_combination)
-print(len(best_combination))
-
-print(f"Indian Pines - Accuracy: {solutions_pavia_c[0][1] * 100:.2f}%")
-
-print(f"Indian Pines - time_train: {solutions_pavia_c[0][2]}seconds")
-
-
-b
-
-est_combination = solutions_salinas[0][0]
-
-print("Best band combination:", best_combination)
-print(len(best_combination))
-
-print(f"Indian Pines - Accuracy: {solutions_salinas[0][1] * 100:.2f}%")
-
-print(f"Indian Pines - time_train: {solutions_salinas[0][2]}seconds")
+print(f"salinas - time_train: {solutions_salinas[0][2]}seconds")
 
 
 
