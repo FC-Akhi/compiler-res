@@ -127,7 +127,9 @@ def ICA(hsi_image, gt, n_components=20):
     return acc, total_time, classification_map, ground_truth_map
 
 
-
+# Load dataset-Pavia centre
+pavia_c = scipy.io.loadmat('contents/data/Pavia.mat')['pavia']
+pavia_c_gt = scipy.io.loadmat('contents/data/Pavia_gt.mat')['pavia_gt']
 
 # Train, test, and visualize for Salinas
 acc_pavia_c, training_time_pavia_c, classification_map_pavia_c, ground_truth_map_pavia_c = ICA(pavia_c, pavia_c_gt)
