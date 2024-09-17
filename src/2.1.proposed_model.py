@@ -7,8 +7,7 @@ This is the implementation of
 Datasets:
 - Pavia University (Pavia U)
 - Pavia Centre (Pavia C)
-- Salinas
-- Indian Pines
+
 
 Architecture:
 - GPU-based implementation using CatBoost for classification.
@@ -30,115 +29,73 @@ import math
 
 import scipy  # For scientific computations and loading datasets
 from catboost import CatBoostClassifier  # For the CatBoost classifier model
-from sklearn.metrics import accuracy_score, classification_report, confusion_matrix  # For evaluation metrics
+from sklearn.metrics import accuracy_score, cohen_kappa_score, confusion_matrix
 from sklearn.model_selection import train_test_split  # To split dataset into training and test sets
 import matplotlib.pyplot as plt  # For plotting graphs and visualization
 from imblearn.over_sampling import SMOTE  # For handling imbalanced datasets by oversampling
 from collections import Counter  # To count occurrences of each class label
 # importing the 'accuracy_score' function from the 'sklearn' library for evaluating classification accuracy
-from sklearn.metrics import accuracy_score,  precision_recall_fscore_support  
-from sklearn.metrics import accuracy_score, classification_report, confusion_matrix, ConfusionMatrixDisplay
 
-
-
-# Declare a global variable to store the best hyperparameters
-best_hyperparameters = {}
-
-
-
-# Dataset classification with Grid Search
-# def initial_model(hsi_image, gt, test_size=0.2, random_state=42):
-#     """
-#     Method to create and train a CatBoost model using hyperspectral imagery data.
-#     The method will also apply SMOTE for balancing classes, test the model, and generate a classification map.
-#     """
-    
-#     # Define the hyperparameter grid for GridSearchCV
-#     param_grid = {
-#         'depth': [3, 4, 6],                  # Tree depth
-#         'n_estimators': [200, 400, 1000],    # Number of boosting iterations
-#     }
-
-#     # Reshape hyperspectral image data
-#     n_samples = hsi_image.shape[0] * hsi_image.shape[1]
-#     n_bands = hsi_image.shape[2]
-#     hsi_image_reshaped = hsi_image.reshape(n_samples, n_bands)
-
-#     # Split the data
-#     X_train, X_test, y_train, y_test = train_test_split(hsi_image_reshaped, gt.reshape(-1), 
-#                                                         stratify=gt.reshape(-1), test_size=test_size, random_state=42)
-
-#     # Apply SMOTE
-#     X_train_smote, y_train_smote = apply_smote(X_train, y_train, random_state=random_state)
-
-#     # Initialize CatBoost model
-#     cbc = CatBoostClassifier(task_type='GPU
-#                             loss_function='MultiClass', 
-#                             verbose=10)
-
-#     # Set up Grid Search with 5-fold cross-validation
-#     grid_search = GridSearchCV(estimator=cbc, param_grid=param_grid, cv=2, scoring='accuracy', verbose=3)
-
-#     # Step 4: Train the model with Grid Search
-#     start = time.time()
-#     grid_search.fit(X_train_smote, y_train_smote)
-#     end = time.time()
-#     train_time = end - start
-
-#     # Print the best hyperparameters and all the results from grid search
-#     print("Best Hyperparameters found by GridSearchCV:", grid_search.best_params_)
-#     best_hyperparameters = grid_search.best_params_
-    
-#     # Get all the results from grid search (to see how other hyperparameter combinations performed)
-#     cv_results = grid_search.cv_results_
-    
-#     # Show all hyperparameter combinations and their corresponding mean test scores
-#     print("\nGrid Search Results for all combinations:")
-#     for i in range(len(cv_results['params'])):
-#         print(f"Combination {i+1}: {cv_results['params'][i]}, Mean Test Score: {cv_results['mean_test_score'][i]}")
-
-#     # Get the best model from the grid search
-#     best_model = grid_search.best_estimator_
-
-    
-#     # Return grid_search
-#     return best_model
 
 
 
 
 # @brief: Visualize the classification map and ground truth side by side.
-def visualize_classification_map(classification_map, ground_truth_map, dataset_name):
+
+def visualize_classification_map(classification_map, dataset_name):
     """
-    Visualize classification map and ground truth side by side and save as an image.
+    Visualize and save only the classification map without a background.
+    
     Args:
         classification_map (ndarray): The predicted classification map.
-        ground_truth_map (ndarray): The actual ground truth map.
         dataset_name (str): Name of the dataset to use for file naming.
     """
-    # Create a figure with two subplots for ground truth and classification map
-    plt.figure(figsize=(10, 5))
-
-    # Display ground truth map
-    plt.subplot(1, 2, 1)
-    plt.imshow(ground_truth_map, cmap='jet')
-    plt.title(f"Ground Truth - {dataset_name}")
+    # Create a figure for the classification map
+    plt.figure(figsize=(5, 5))
+    plt.imshow(classification_map, cmap='jet')  # Use 'jet' colormap for classification map
     plt.axis('off')  # Hide axes
 
-    # Display classification map
-    plt.subplot(1, 2, 2)
-    plt.imshow(classification_map, cmap='jet')
-    plt.title(f"Classification Map - {dataset_name}")
-    plt.axis('off')  # Hide axes
-
-    # Ensure the directory for saving the map exists, create it if it doesn't
+    # Ensure the directory for saving the map exists
     os.makedirs('maps/2.proposed_algo_GPU', exist_ok=True)
-    filepath = os.path.join('maps/2.proposed_algo_GPU', f"{dataset_name}_classification_vs_ground_truth.png")
-    
-    # Save the figure as an image
-    plt.savefig(filepath)
+    filepath = os.path.join('maps/2.proposed_algo_GPU', f"{dataset_name}_classification_map.png")
+
+    # Save the figure as an image with a transparent background and no padding
+    plt.savefig(filepath, transparent=True, bbox_inches='tight', pad_inches=0)
     plt.close()
+
     print(f"Figure saved as {filepath}")
+
+
+# Function to calculate OA, AA, and Kappa
+def calculate_metrics(y_true, y_pred):
+    """
+    Calculate Overall Accuracy (OA), Average Accuracy (AA), and Kappa metrics.
+    Args:
+        y_true (ndarray): Ground truth labels.
+        y_pred (ndarray): Predicted labels.
+    Returns:
+        oa: Overall Accuracy
+        aa: Average Accuracy
+        kappa: Kappa Coefficient
+    """
+    # Overall Accuracy (OA)
+    oa = accuracy_score(y_true, y_pred)
+
+    # Confusion Matrix
+    cm = confusion_matrix(y_true, y_pred)
+
+    # Per-class accuracy (diagonal values divided by total class samples)
+    per_class_acc = cm.diagonal() / cm.sum(axis=1)
+
+    # Average Accuracy (AA)
+    aa = np.mean(per_class_acc)
+
+    # Kappa Coefficient
+    kappa = cohen_kappa_score(y_true, y_pred)
+
+    return oa, aa, kappa
+
+
 
 
 # Function to apply SMOTE
@@ -149,10 +106,6 @@ def apply_smote(X_train, y_train, random_state=42):
     smote = SMOTE(random_state=random_state)
     X_train_smote, y_train_smote = smote.fit_resample(X_train, y_train)
     return X_train_smote, y_train_smote
-
-
-
-
 
 
 
@@ -203,21 +156,20 @@ def initial_model(hsi_image, gt, test_size=0.2, random_state=42):
 
     # Create CatBoost classifier
     cbc = CatBoostClassifier(
-        iterations=1000,
+        n_estimators=1500,
+        learning_rate=0.1,
         depth=6,
         loss_function='MultiClass',
+        random_strength=2,
+        l2_leaf_reg=1,
         task_type='GPU',
         early_stopping_rounds=50,
-        verbose=100   
+        verbose=False  
     )
 
 
     # Train the CatBoost model on the SMOTE-applied training data
-    start = time.time()
     cbc.fit(X_train_smote, y_train_smote)
-    end = time.time()
-    total_time = end - start  # Total training time
-
 
     # return the trained model
     return cbc
@@ -322,7 +274,7 @@ def band_removal_and_model_train(hsi_image, gt, deleted_indices, test_size=0.2, 
     
     Output:
     - acc: Accuracy score of the model on the test data
-    - train_time: Time taken to train the model
+    - test_time: Time taken to train the model
     - classification_map: Predicted class labels for the entire hyperspectral image
     - ground_truth_map: Ground truth labels
     """
@@ -347,26 +299,30 @@ def band_removal_and_model_train(hsi_image, gt, deleted_indices, test_size=0.2, 
 
     # Create CatBoost classifier
     cbc = CatBoostClassifier(
-        iterations=1000,
+        n_estimators=1500,
+        learning_rate=0.1,
         depth=6,
         loss_function='MultiClass',
+        random_strength=2,
+        l2_leaf_reg=1,
         task_type='GPU',
         early_stopping_rounds=50,
-        verbose=100   
+        verbose=False  
     )
 
     # Train the model on the SMOTE-balanced training data
-    start = time.time()
+    
     cbc.fit(X_train_smote, y_train_smote)
-    end = time.time()
-    train_time = end - start  # Calculate the training time
+    
 
     # Test the model on the test set
+    start = time.time()
     y_pred = cbc.predict(X_test)
-    acc = accuracy_score(y_test, y_pred)
+    end = time.time()
+    test_time = end - start  # Calculate the training time
 
-    # Additional metrics (Confusion Matrix, Precision, Recall, F1-Score)
-    # calculate_additional_metrics(y_test, y_pred)
+
+    acc = accuracy_score(y_test, y_pred)
 
     # Generate the classification map for the entire hyperspectral dataset
     y_pred_full = cbc.predict(hsi_image_reduced)
@@ -378,7 +334,7 @@ def band_removal_and_model_train(hsi_image, gt, deleted_indices, test_size=0.2, 
     ground_truth_map = gt.reshape(hsi_image.shape[0], hsi_image.shape[1])
 
     # Return accuracy, training time, classification map, and ground truth map
-    return acc, train_time, classification_map, ground_truth_map
+    return acc, test_time, classification_map, ground_truth_map
 
 
 
@@ -432,30 +388,35 @@ def blackbox_function(band_combination, hsi_image, gt, feature_importance, test_
     
     # Create CatBoost classifier
     cbc = CatBoostClassifier(
-        iterations=1000,
+        n_estimators=1500,
+        learning_rate=0.1,
         depth=6,
         loss_function='MultiClass',
+        random_strength=2,
+        l2_leaf_reg=1,
         task_type='GPU',
         early_stopping_rounds=50,
-        verbose=100   
+        verbose=False  
     )
 
     
+
+    
     # Train the model
-    start = time.time()
+    start_train_time = time.time()
     cbc.fit(X_train, y_train)  # train the classifier on the training set
-    end = time.time()
-    train_time = end - start
+    end_train_time = time.time()
+    training_time = end_train_time - start_train_time
 
-    
-    
     # Test the model
+    start_test_time = time.time()
     y_pred = cbc.predict(X_test)
-    acc = accuracy_score(y_test, y_pred)
+    end_test_time = time.time()
+    testing_time = end_test_time - start_test_time
 
+    # Calculate metrics: OA, AA, and Kappa
+    oa, aa, kappa = calculate_metrics(y_test, y_pred)
 
-    # Additional Metrics: Confusion Matrix, Precision, Recall, F1-Score
-    # calculate_additional_metrics(y_test, y_pred)
 
 
     # Generate classification map for the entire dataset
@@ -469,7 +430,7 @@ def blackbox_function(band_combination, hsi_image, gt, feature_importance, test_
 
 
     # Return accuracy, training time, and classification maps
-    return acc, train_time, classification_map, ground_truth_map
+    return oa, testing_time, classification_map, ground_truth_map, cbc
 
 
 
@@ -479,7 +440,7 @@ def genetic_algorithm(num_solutions, n_bands_per_solution, threshold_accuracy, n
     Genetic Algorithm with dynamic crossover and mutation rates, elitism, and probabilistic selection.
     """
     
-    def dynamic_mutation_rate(gen, max_gen, base_rate=0.3):
+    def dynamic_mutation_rate(gen, max_gen, base_rate=0.5):
         """ Increase mutation rate early on, then decrease as we approach max generations """
         return base_rate * (1 - (gen / max_gen))  # Higher mutation rate early, reduces over time
 
@@ -506,17 +467,17 @@ def genetic_algorithm(num_solutions, n_bands_per_solution, threshold_accuracy, n
         band_combination = [BANDS_index[idx] for idx in band_indices]
 
         # EVALUATION: Evaluate the accuracy of the n-band combination using the objective function
-        accuracy, train_time, classification_map, ground_truth_map = blackbox_function(band_combination, hsi_image, gt, original_feature_score)
+        accuracy, test_time, classification_map, ground_truth_map, cbc = blackbox_function(band_combination, hsi_image, gt, original_feature_score)
 
         # SELECTION: Keep the n-band combination if its accuracy is greater than the threshold accuracy
         if accuracy > threshold_accuracy:
-            population.append((band_combination, accuracy, train_time))
-            print("parent solution:", band_combination)
-            print("parents accuracy", accuracy)
-            print("parents train_time", train_time)
+            population.append((band_combination, accuracy, test_time))
+            # print("parent solution:", band_combination)
+            # print("parents accuracy", accuracy)
+            # print("parents test_time", test_time)
 
     # ELITISM: Ensure best individual is always kept
-    elite_size = max(1, int(0.1 * num_solutions))  # Top 10% of population kept as elite
+    elite_size = max(1, int(0.2 * num_solutions))  # Top 10% of population kept as elite
 
     # Evolve the population over generations
     for gen in range(num_generations):
@@ -557,14 +518,14 @@ def genetic_algorithm(num_solutions, n_bands_per_solution, threshold_accuracy, n
                     offspring[index] = new_band
 
             # EVALUATION: Evaluate the accuracy of the offspring solution
-            accuracy, train_time, classification_map, ground_truth_map = blackbox_function(offspring, hsi_image, gt, original_feature_score)
+            accuracy, test_time, classification_map, ground_truth_map, cbc = blackbox_function(offspring, hsi_image, gt, original_feature_score)
 
             # SELECTION: Keep the offspring solution if its accuracy is greater than the threshold accuracy
             if accuracy > threshold_accuracy:
-                new_population.append((offspring, accuracy, train_time))
-                print("offspring combination:", offspring)
-                print("offspring accuracy", accuracy)
-                print("offspring train_time", train_time)
+                new_population.append((offspring, accuracy, test_time))
+                # print("offspring combination:", offspring)
+                # print("offspring accuracy", accuracy)
+                # print("offspring test_time", test_time)
 
         # Combine elite and new offspring
         population = population[:elite_size] + new_population
@@ -573,7 +534,7 @@ def genetic_algorithm(num_solutions, n_bands_per_solution, threshold_accuracy, n
         population.sort(key=lambda x: x[1], reverse=True)
 
     # Return the band combinations with accuracy
-    return population
+    return population, cbc
 
 
 
@@ -604,13 +565,13 @@ print(f"total band{len(new_indices_list_pavia_u)+len(deleted_indices_list_pavia_
 
 
 # Train on reduced data set and find the accuracy which will be the threshold accuracy for GA
-threshold_acc_pavia_u, train_time, classification_map, ground_truth_map = band_removal_and_model_train(pavia_u, pavia_u_gt, deleted_indices_list_pavia_u)
+threshold_acc_pavia_u, test_time, classification_map, ground_truth_map = band_removal_and_model_train(pavia_u, pavia_u_gt, deleted_indices_list_pavia_u)
 print("threshold_acc:", threshold_acc_pavia_u)
-print("train_time:", train_time)
+print("test_time:", test_time)
 
 
 # Visualize the class map
-visualize_classification_map(classification_map, ground_truth_map, "Pavia_University_initial")
+visualize_classification_map(classification_map, "Pavia_University_initial")
 
 
 
@@ -641,68 +602,34 @@ print(f"total band{len(new_indices_list_pavia_c)+len(deleted_indices_list_pavia_
 
 
 # Train on reduced data set and find the accuracy which will be the threshold accuracy for GA
-threshold_acc_pavia_c, train_time, classification_map, ground_truth_map = band_removal_and_model_train(pavia_c, pavia_c_gt, deleted_indices_list_pavia_c)
+threshold_acc_pavia_c, test_time, classification_map, ground_truth_map = band_removal_and_model_train(pavia_c, pavia_c_gt, deleted_indices_list_pavia_c)
 print("threshold_acc:", threshold_acc_pavia_c)
-print("train_time:", train_time)
+print("test_time:", test_time)
 
 
 # Visualize the class map
-visualize_classification_map(classification_map, ground_truth_map, "Pavia_centre_initial")
+visualize_classification_map(classification_map, "Pavia_centre_initial")
 
-
-
-
-# Load dataset-Salinas
-salinas = scipy.io.loadmat('contents/data/Salinas.mat')['salinas']
-salinas_gt = scipy.io.loadmat('contents/data/Salinas_gt.mat')['salinas_gt']
-
-
-# Find feature score Pavia University
-feature_score_salinas = find_feature_score(salinas, salinas_gt)
-print("feature score salinas:", feature_score_salinas)
-
-
-# Normalized CatBoost feature scores
-normalized_cbc_score_salinas = normalize_scores(feature_score_salinas)
-print("Normalized CatBoost feature scores:", normalized_cbc_score_salinas)
-
-
-# Reduce bands depending on feature score
-new_sorted_score_list_salinas, new_indices_list_salinas, deleted_indices_list_salinas = get_reduced_bands(normalized_cbc_score_salinas)
-print("new_sorted_score_list_salinas", new_sorted_score_list_salinas)
-print("new_indices_list_salinas", new_indices_list_salinas)
-print("deleted_indices_list_salinas", deleted_indices_list_salinas)
-print(f"total band: {len(new_indices_list_salinas)+len(deleted_indices_list_salinas)}, Number of bands after reduction: {len(new_indices_list_salinas)}")
-
-
-# Train on reduced data set and find the accuracy which will be the threshold accuracy for GA
-threshold_acc_salinas, train_time, classification_map, ground_truth_map = band_removal_and_model_train(salinas, salinas_gt, deleted_indices_list_salinas)
-print("threshold_acc:", threshold_acc_salinas)
-print("train_time:", train_time)
-
-
-# Visualize the class map
-visualize_classification_map(classification_map, ground_truth_map, "Salinas_initial")
 
 
 
 # population size
-no_of_population = 10
+no_of_population = 60
 
 # percent of bands
-percent_of_bands = 60
+percent_of_bands = 80
 
 
 # generation size
-no_of_generations = 10
+no_of_generations = 20
 
 
 
-# candidate solution size per population
+# # candidate solution size per population
 no_of_bands_per_solution = get_size_of_single_combination(new_indices_list_pavia_u, percent_of_bands)
 
 # list of different band combinations equa to or higher than threshold accuracy
-solutions_pavia_u = genetic_algorithm(
+solutions_pavia_u, cbc = genetic_algorithm(
     no_of_population, 
     no_of_bands_per_solution, 
     threshold_acc_pavia_u, 
@@ -715,18 +642,20 @@ solutions_pavia_u = genetic_algorithm(
 )
 
 
+# Directly access the best solution
+best_solution = solutions_pavia_u[0]
 
+# Unpack the tuple from best_solution (contains band combination, accuracy, test time)
+best_band_combination = best_solution[0]  # This is the list of bands
+accuracy = best_solution[1]               # This is the accuracy value
+test_time = best_solution[2]              # This is the test time value
 
+# Print out the details
+print("Best band combination:", best_band_combination)
+print("Number of bands:", len(best_band_combination))
+print(f"PU - Accuracy: {accuracy * 100:.2f}%")
+print(f"PU - time_train: {test_time} seconds")
 
-
-best_combination = solutions_pavia_u[0][0]
-
-print("Best band combination:", best_combination)
-print(len(best_combination))
-
-print(f"PU - Accuracy: {solutions_pavia_u[0][1] * 100:.2f}%")
-
-print(f"PU - time_train: {solutions_pavia_u[0][2]}seconds")
 
 
 
@@ -737,7 +666,7 @@ print(f"PU - time_train: {solutions_pavia_u[0][2]}seconds")
 no_of_bands_per_solution = get_size_of_single_combination(new_indices_list_pavia_c, percent_of_bands)
 
 # list of different band combinations equa to or higher than threshold accuracy
-solutions_pavia_c = genetic_algorithm(
+solutions_pavia_c, cbc = genetic_algorithm(
     no_of_population, 
     no_of_bands_per_solution, 
     threshold_acc_pavia_c, 
@@ -751,49 +680,25 @@ solutions_pavia_c = genetic_algorithm(
 
 
 
-best_combination = solutions_pavia_u[0][0]
+# Directly access the best solution
+best_solution = solutions_pavia_c[0]
 
-print("Best band combination:", best_combination)
-print(len(best_combination))
+# Unpack the tuple from best_solution (contains band combination, accuracy, test time)
+best_band_combination = best_solution[0]  # This is the list of bands
+accuracy = best_solution[1]               # This is the accuracy value
+test_time = best_solution[2]              # This is the test time value
 
-print(f"Pavia_c - Accuracy: {solutions_pavia_c[0][1] * 100:.2f}%")
-
-print(f"Pavia_c - time_train: {solutions_pavia_c[0][2]}seconds")
-
-
-
-
-# candidate solution size per population
-no_of_bands_per_solution = get_size_of_single_combination(new_indices_list_salinas, percent_of_bands)
-
-# list of different band combinations equa to or higher than threshold accuracy
-solutions_salinas = genetic_algorithm(
-    no_of_population, 
-    no_of_bands_per_solution, 
-    threshold_acc_salinas, 
-    no_of_generations, 
-    salinas, 
-    salinas_gt, 
-    new_sorted_score_list_salinas, 
-    new_indices_list_salinas, 
-    normalized_cbc_score_salinas
-)
+# Print out the details
+print("Best band combination:", best_band_combination)
+print("Number of bands:", len(best_band_combination))
+print(f"PC - Accuracy: {accuracy * 100:.2f}%")
+print(f"PC - time_test: {test_time} seconds")
 
 
 
 
-best_combination = solutions_salinas[0][0]
 
-print("Best band combination:", best_combination)
-print(len(best_combination))
-
-print(f"salinas - Accuracy: {solutions_salinas[0][1] * 100:.2f}%")
-
-print(f"salinas - time_train: {solutions_salinas[0][2]}seconds")
-
-
-
-def classification_map_final(band_combination, hsi_image, gt, test_size = 0.2, random_state=42):
+def classification_map_final(band_combination, hsi_image, gt, test_size = 0.2, random_state=42, cbc=None):
 
     """
     Input: band combination, original hsi image with its gt, original feature score list of cooresponding image
@@ -814,31 +719,21 @@ def classification_map_final(band_combination, hsi_image, gt, test_size = 0.2, r
 
     X_train, X_test, y_train, y_test = train_test_split(selected_bands, gt.reshape(-1), stratify=gt.reshape(-1), test_size=test_size, random_state=random_state)  # split the data into training and testing sets
     
-    # Create CatBoost classifier
-    cbc = CatBoostClassifier(
-        iterations=1000,
-        depth=6,
-        loss_function='MultiClass',
-        eval_metric='Accuracy',
-        random_seed=random_state,
-        task_type='GPU',
-        early_stopping_rounds=50,
-        custom_metric=['Accuracy'],
-        verbose=10
-    )
 
+    # # Train the model
     
-    # Train the model
-    start = time.time()
     cbc.fit(X_train, y_train)  # train the classifier on the training set
-    end = time.time()
-    train_time = end - start
-
+    
     
     
     # Test the model
+    start_test_time = time.time()
     y_pred = cbc.predict(X_test)
-    acc = accuracy_score(y_test, y_pred)
+    end_test_time = time.time()
+    testing_time = end_test_time - start_test_time
+
+    # Calculate metrics: OA, AA, and Kappa
+    oa, aa, kappa = calculate_metrics(y_test, y_pred)
 
 
     # Generate classification map for the entire dataset
@@ -848,31 +743,39 @@ def classification_map_final(band_combination, hsi_image, gt, test_size = 0.2, r
     classification_map = y_pred_full.reshape(hsi_image.shape[0], hsi_image.shape[1])
     
     # # Reshape ground truth
-    ground_truth_map = gt.reshape(hsi_image.shape[0], hsi_image.shape[1])
+    # ground_truth_map = gt.reshape(hsi_image.shape[0], hsi_image.shape[1])
 
 
     # Return accuracy, training time, and classification maps
-    return acc, train_time, classification_map, ground_truth_map
+    return oa, aa, kappa, testing_time, classification_map
 
 
 
 
-acc, train_time, classification_map, ground_truth_map = classification_map_final(solutions_pavia_u[0][0], pavia_u, pavia_u_gt, test_size = 0.2, random_state=42)
-
-visualize_classification_map(classification_map, ground_truth_map, f"Pavia_University_map_final")
 
 
+oa_pavia_u, aa_pavia_u, kappa_pavia_u, testing_time_pavia_u, classification_map_pavia_u  = classification_map_final(solutions_pavia_u[0][0], pavia_u, pavia_u_gt, test_size = 0.2, random_state=42, cbc=cbc)
 
-acc, train_time, classification_map, ground_truth_map = classification_map_final(solutions_pavia_c[0][0], pavia_c, pavia_c_gt, test_size = 0.2, random_state=42)
+visualize_classification_map(classification_map_pavia_u, f"1. Pavia_University_map_final")
 
-visualize_classification_map(classification_map, ground_truth_map, f"Pavia_Centre_map_final")
+# Print metrics for Pavia University
+print(f"Pavia University - Overall Accuracy: {oa_pavia_u * 100:.2f}%")
+print(f"Pavia University - Average Accuracy: {aa_pavia_u * 100:.2f}%")
+print(f"Pavia University - Kappa Coefficient: {kappa_pavia_u:.4f}")
+print(f"Pavia University - Testing Time: {testing_time_pavia_u:.2f} sec")
 
 
 
+oa_pavia_c, aa_pavia_c, kappa_pavia_c, testing_time_pavia_c, classification_map_pavia_c = classification_map_final(solutions_pavia_c[0][0], pavia_c, pavia_c_gt, test_size = 0.2, random_state=42, cbc=cbc)
 
-acc, train_time, classification_map, ground_truth_map = classification_map_final(solutions_salinas[0][0], salinas, salinas_gt, test_size = 0.2, random_state=42)
+visualize_classification_map(classification_map_pavia_c, f"2. Pavia_Centre_map_final")
 
-visualize_classification_map(classification_map, ground_truth_map, f"Salinas_map_final")
+# Print metrics for Pavia Centre
+print(f"Pavia Centre - Overall Accuracy: {oa_pavia_c * 100:.2f}%")
+print(f"Pavia Centre - Average Accuracy: {aa_pavia_c * 100:.2f}%")
+print(f"Pavia Centre - Kappa Coefficient: {kappa_pavia_c:.4f}")
+print(f"Pavia Centre - Testing Time: {testing_time_pavia_c:.2f} sec")
+
 
 
 

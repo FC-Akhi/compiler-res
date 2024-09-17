@@ -23,20 +23,16 @@ Authors:
 
 
 # Import necessary libraries
-import os  # For directory operations
-import numpy as np  # For numerical computations and array manipulations
-import time  # To calculate training time
-
-import scipy  # For scientific computations and loading datasets
-from catboost import CatBoostClassifier  # For the CatBoost classifier model
-from sklearn.metrics import accuracy_score, classification_report, confusion_matrix  # For evaluation metrics
-from sklearn.model_selection import train_test_split  # To split dataset into training and test sets
-import matplotlib.pyplot as plt  # For plotting graphs and visualization
-from imblearn.over_sampling import SMOTE  # For handling imbalanced datasets by oversampling
-from collections import Counter  # To count occurrences of each class label
-# importing the 'accuracy_score' function from the 'sklearn' library for evaluating classification accuracy
-from sklearn.metrics import accuracy_score,  precision_recall_fscore_support  
-from sklearn.metrics import accuracy_score, classification_report, confusion_matrix, ConfusionMatrixDisplay
+import os
+import numpy as np
+import time
+import scipy
+from catboost import CatBoostClassifier
+from sklearn.metrics import accuracy_score, cohen_kappa_score, confusion_matrix
+from sklearn.model_selection import train_test_split
+from imblearn.over_sampling import SMOTE
+import matplotlib.pyplot as plt
+from sklearn.metrics import classification_report
 
 
 
@@ -82,71 +78,68 @@ def analyze_class_distribution(gt, dataset_name):
 
 # @brief: Visualize the classification map and ground truth side by side.
 # This function displays the classification map and ground truth, then saves the result as an image.
-def visualize_classification_map(classification_map, ground_truth_map, dataset_name):
+def visualize_classification_map(classification_map, dataset_name):
     """
-    Visualize classification map and ground truth side by side and save as an image.
+    Visualize and save only the classification map without a background.
+    
     Args:
         classification_map (ndarray): The predicted classification map.
-        ground_truth_map (ndarray): The actual ground truth map.
         dataset_name (str): Name of the dataset to use for file naming.
     """
-    # Create a figure with two subplots for ground truth and classification map
-    plt.figure(figsize=(10, 5))
-
-    # Display ground truth map
-    plt.subplot(1, 2, 1)
-    plt.imshow(ground_truth_map, cmap='jet')
-    plt.title(f"Ground Truth - {dataset_name}")
+    # Create a figure for the classification map
+    plt.figure(figsize=(5, 5))
+    plt.imshow(classification_map, cmap='jet')  # Use 'jet' colormap for classification map
     plt.axis('off')  # Hide axes
 
-    # Display classification map
-    plt.subplot(1, 2, 2)
-    plt.imshow(classification_map, cmap='jet')
-    plt.title(f"Classification Map - {dataset_name}")
-    plt.axis('off')  # Hide axes
-
-    # Ensure the directory for saving the map exists, create it if it doesn't
-    filepath = os.path.join('maps/1.baseline_GPU', f"{dataset_name}_classification_vs_ground_truth.png")
+    # Ensure the directory for saving the map exists
     os.makedirs('maps/1.baseline_GPU', exist_ok=True)
-    
-    # Save the figure as an image
-    plt.savefig(filepath)
-    print(f"Figure saved as {dataset_name}_classification_vs_ground_truth.png")
+    filepath = os.path.join('maps/1.baseline_GPU', f"{dataset_name}_classification_map.png")
+
+    # Save the figure as an image with a transparent background and no padding
+    plt.savefig(filepath, transparent=True, bbox_inches='tight', pad_inches=0)
+    plt.close()
+
+    print(f"Figure saved as {filepath}")
 
 
 
 
-# @brief: Calculate additional metrics such as confusion matrix, precision, recall, and F1-score per class.
-# This function computes these metrics, prints them, and visualizes the confusion matrix.
-def calculate_additional_metrics(y_true, y_pred):
+# Function to apply SMOTE for class balancing
+def apply_smote(X_train, y_train, random_state=42):
+    smote = SMOTE(random_state=random_state)
+    X_train_smote, y_train_smote = smote.fit_resample(X_train, y_train)
+    return X_train_smote, y_train_smote
+
+
+
+# Function to calculate OA, AA, and Kappa
+def calculate_metrics(y_true, y_pred):
     """
-    Calculate and display confusion matrix, precision, recall, and F1-score per class.
+    Calculate Overall Accuracy (OA), Average Accuracy (AA), and Kappa metrics.
     Args:
-        y_true (ndarray): Ground truth labels for the test data.
-        y_pred (ndarray): Predicted labels from the classifier.
+        y_true (ndarray): Ground truth labels.
+        y_pred (ndarray): Predicted labels.
+    Returns:
+        oa: Overall Accuracy
+        aa: Average Accuracy
+        kappa: Kappa Coefficient
     """
-    # Compute the confusion matrix
-    print("Confusion Matrix:")
+    # Overall Accuracy (OA)
+    oa = accuracy_score(y_true, y_pred)
+
+    # Confusion Matrix
     cm = confusion_matrix(y_true, y_pred)
-    print(cm)
-    
-    # Display confusion matrix as a plot
-    disp = ConfusionMatrixDisplay(confusion_matrix=cm)
-    disp.plot()
-    plt.show()
 
-    # Display the classification report (precision, recall, F1-score, and support)
-    print("\nClassification Report:")
-    report = classification_report(y_true, y_pred)
-    print(report)
+    # Per-class accuracy (diagonal values divided by total class samples)
+    per_class_acc = cm.diagonal() / cm.sum(axis=1)
 
-    # Calculate precision, recall, and F1-score per class without averaging
-    precision, recall, fscore, _ = precision_recall_fscore_support(y_true, y_pred, average=None)
-    
-    # Print additional metrics for each class
-    print("Precision per class:", precision)
-    print("Recall per class:", recall)
-    print("F1-Score per class:", fscore)
+    # Average Accuracy (AA)
+    aa = np.mean(per_class_acc)
+
+    # Kappa Coefficient
+    kappa = cohen_kappa_score(y_true, y_pred)
+
+    return oa, aa, kappa
 
 
 
@@ -216,18 +209,21 @@ def model_train_test(hsi_image, gt, test_size=0.2, random_state=42):
     )
     
 
-    # Train the CatBoost model on the SMOTE-applied training data
-    start = time.time()
+   # Train the model
+    start_train_time = time.time()
     cbc.fit(X_train_smote, y_train_smote)
-    end = time.time()
-    total_time = end - start  # Total training time
+    end_train_time = time.time()
+    training_time = end_train_time - start_train_time
 
-    # Test the trained model on the test set
+    # Test the model
+    start_test_time = time.time()
     y_pred = cbc.predict(X_test)
-    acc = accuracy_score(y_test, y_pred)  # Calculate accuracy of the model on the test data
+    end_test_time = time.time()
+    testing_time = end_test_time - start_test_time
 
-    # Display additional metrics like confusion matrix, precision, recall, and F1-score
-    calculate_additional_metrics(y_test, y_pred)
+    # Calculate metrics: OA, AA, and Kappa
+    oa, aa, kappa = calculate_metrics(y_test, y_pred)
+
 
     # Reshape the entire hyperspectral image (3D) to 2D for generating the classification map
     hsi_image_reshaped = hsi_image.reshape(-1, hsi_image.shape[2])
@@ -239,14 +235,11 @@ def model_train_test(hsi_image, gt, test_size=0.2, random_state=42):
     classification_map = y_pred_full.reshape(hsi_image.shape[0], hsi_image.shape[1])
 
     # Reshape the ground truth labels back to the original image dimensions (height x width)
-    ground_truth_map = gt.reshape(hsi_image.shape[0], hsi_image.shape[1])
+    # ground_truth_map = gt.reshape(hsi_image.shape[0], hsi_image.shape[1])
 
-    # params = cbc.get_all_params()
-    # print("Full parameters:", params)
 
-    # Return the accuracy, training time, classification map, and ground truth map
-    return acc, total_time, classification_map, ground_truth_map
-
+    # Return the calculated metrics and classification map
+    return oa, aa, kappa, training_time, testing_time, classification_map
 
 
 
@@ -256,18 +249,19 @@ def model_train_test(hsi_image, gt, test_size=0.2, random_state=42):
 pavia_u = scipy.io.loadmat('contents/data/PaviaU.mat')['paviaU']
 pavia_u_gt = scipy.io.loadmat('contents/data/PaviaU_gt.mat')['paviaU_gt']
 
-# # Analyze data set class distribution
-# analyze_class_distribution(pavia_u_gt, 'pavia_u')
-
 
 # Train, test, and visualize for Pavia University
-acc_pavia_u, training_time_pavia_u, classification_map_pavia_u, ground_truth_map_pavia_u = model_train_test(pavia_u, pavia_u_gt)
-
+oa_pavia_u, aa_pavia_u, kappa_pavia_u, training_time_pavia_u, testing_time_pavia_u, classification_map_pavia_u = model_train_test(pavia_u, pavia_u_gt)
 
 # visualize classification map vs ground truth
-visualize_classification_map(classification_map_pavia_u, ground_truth_map_pavia_u, "Pavia University")
+visualize_classification_map(classification_map_pavia_u, "1.Pavia University")
 
-
+# Print metrics for Pavia University
+print(f"Pavia University - Overall Accuracy: {oa_pavia_u * 100:.2f}%")
+print(f"Pavia University - Average Accuracy: {aa_pavia_u * 100:.2f}%")
+print(f"Pavia University - Kappa Coefficient: {kappa_pavia_u:.4f}")
+print(f"Pavia University - Training Time: {training_time_pavia_u:.2f} sec")
+print(f"Pavia University - Testing Time: {testing_time_pavia_u:.2f} sec")
 
 
 
@@ -276,67 +270,24 @@ visualize_classification_map(classification_map_pavia_u, ground_truth_map_pavia_
 pavia_c = scipy.io.loadmat('contents/data/Pavia.mat')['pavia']
 pavia_c_gt = scipy.io.loadmat('contents/data/Pavia_gt.mat')['pavia_gt']
 
-# # Analyze data set class distribution
-# analyze_class_distribution(pavia_c_gt, 'pavia_c')
 
-
-# Train, test, and visualize for Pavia University
-acc_pavia_c, training_time_pavia_c, classification_map_pavia_c, ground_truth_map_pavia_c = model_train_test(pavia_c, pavia_c_gt)
-
+# Train, test, and visualize for Pavia Centre
+oa_pavia_c, aa_pavia_c, kappa_pavia_c, training_time_pavia_c, testing_time_pavia_c, classification_map_pavia_c = model_train_test(pavia_c, pavia_c_gt)
 
 # visualize classification map vs ground truth
-visualize_classification_map(classification_map_pavia_c, ground_truth_map_pavia_c, "Pavia Centre")
+visualize_classification_map(classification_map_pavia_c, "2.Pavia Centre")
+
+# Print metrics for Pavia Centre
+print(f"Pavia Centre - Overall Accuracy: {oa_pavia_c * 100:.2f}%")
+print(f"Pavia Centre - Average Accuracy: {aa_pavia_c * 100:.2f}%")
+print(f"Pavia Centre - Kappa Coefficient: {kappa_pavia_c:.4f}")
+print(f"Pavia Centre - Training Time: {training_time_pavia_c:.2f} sec")
+print(f"Pavia Centre - Testing Time: {testing_time_pavia_c:.2f} sec")
 
 
 
 
 
-
-# Load dataset-Salinas
-salinas = scipy.io.loadmat('contents/data/Salinas.mat')['salinas']
-salinas_gt = scipy.io.loadmat('contents/data/Salinas_gt.mat')['salinas_gt']
-
-# # Analyze data set class distribution
-# analyze_class_distribution(salinas_gt, 'salinas')
-
-
-# Train, test, and visualize for Pavia University
-acc_salinas, training_time_salinas, classification_map_salinas, ground_truth_map_salinas = model_train_test(salinas, salinas_gt)
-
-
-# visualize classification map vs ground truth
-visualize_classification_map(classification_map_salinas, ground_truth_map_salinas, "Salinas")
-
-
-
-
-# # Load dataset-Indian Pines
-# indian_pines = scipy.io.loadmat('contents/data/Indian_pines.mat')['indian_pines']
-# indian_pines_gt = scipy.io.loadmat('contents/data/Indian_pines_gt.mat')['indian_pines_gt']
-
-# # Analyze data set class distribution
-# analyze_class_distribution(indian_pines_gt, 'indian_pines')
-
-
-# # Train, test, and visualize for Pavia University
-# acc_indian_pines, training_time_indian_pines, classification_map_indian_pines, ground_truth_map_indian_pines = model_train_test(indian_pines, indian_pines_gt)
-
-
-# # visualize classification map vs ground truth
-# visualize_classification_map(classification_map_indian_pines, ground_truth_map_indian_pines, "Indian Pines")
-
-
-
-
-
-# Print accuracies and training times
-print(f"Pavia University - Training Time: {training_time_pavia_u:.2f} sec, Accuracy: {acc_pavia_u * 100:.2f}%")
-# Print accuracies and training times
-print(f"Pavia Centre - Training Time: {training_time_pavia_c:.2f} sec, Accuracy: {acc_pavia_c * 100:.2f}%")
-# Print accuracies and training times
-print(f"Salinas - Training Time: {training_time_salinas:.2f} sec, Accuracy: {acc_salinas * 100:.2f}%")
-# # Print accuracies and training times
-# print(f"Indian Pines - Training Time: {training_time_indian_pines:.2f} sec, Accuracy: {acc_indian_pines * 100:.2f}%")
 
 
 
