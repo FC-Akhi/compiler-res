@@ -15,4 +15,5 @@ refresh requirements.txt
 
 run the code
 
-```python3 src/baseline_test.py```
+
+```python3 src/proposed_test2.py```
