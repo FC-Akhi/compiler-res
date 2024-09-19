@@ -1,14 +1,18 @@
 set virtual env
-virtualenv -p python3 py3env
+
+```virtualenv -p python3 py3env```
 
 
 activate virtual env
-source py3env/bin/activate
+
+```source py3env/bin/activate```
 
 
 refresh requirements.txt
-pip freeze > requirements.txt
+
+```pip freeze > requirements.txt```
 
 
 run the code
-python3 src/baseline_test.py
+
+```python3 src/baseline_test.py```
