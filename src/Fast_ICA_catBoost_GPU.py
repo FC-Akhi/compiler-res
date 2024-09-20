@@ -92,8 +92,53 @@ def model_train_test(hsi_image, gt, hsi_image_limited, test_size=0.2, random_sta
 
 
 
+# # Function to apply ICA for dimensionality reduction
+# def ICA(hsi_image, gt):
+#     n_samples = hsi_image.shape[0] * hsi_image.shape[1]
+#     n_bands = hsi_image.shape[2]
+#     hsi_image_reshaped = hsi_image.reshape(n_samples, n_bands)
+
+#     # Standardize the data
+#     scaler = StandardScaler()
+#     hsi_image_scaled = scaler.fit_transform(hsi_image_reshaped)
+
+#     # Apply ICA
+#     ica = FastICA(random_state=42)
+#     hsi_image_limited = ica.fit_transform(hsi_image_scaled)
+
+#     # Print the number of bands before and after applying ICA
+#     print(f"Number of bands before applying ICA: {n_bands}")
+#     print(f"Number of components after applying ICA: {hsi_image_limited.shape[1]}")  # Print remaining components
+
+
+#     # Train the model
+#     oa, aa, kappa, total_time1, total_time2, cbc = model_train_test(hsi_image, gt, hsi_image_limited)
+    
+#     return oa, aa, kappa, total_time1, total_time2, cbc, hsi_image_limited
+
+
+
+
+
 # Function to apply ICA for dimensionality reduction
-def ICA(hsi_image, gt):
+def ICA(hsi_image, gt, n_components=51):
+    """
+    Apply ICA for dimensionality reduction on hyperspectral image.
+    
+    Args:
+        hsi_image (ndarray): The hyperspectral image.
+        gt (ndarray): Ground truth labels.
+        n_components (int): Number of ICA components to reduce to (default 50).
+        
+    Returns:
+        oa (float): Overall Accuracy.
+        aa (float): Average Accuracy.
+        kappa (float): Kappa score.
+        total_time1 (float): Training time.
+        total_time2 (float): Testing time.
+        cbc (CatBoostClassifier): Trained CatBoost classifier.
+        hsi_image_limited (ndarray): Reduced hyperspectral image.
+    """
     n_samples = hsi_image.shape[0] * hsi_image.shape[1]
     n_bands = hsi_image.shape[2]
     hsi_image_reshaped = hsi_image.reshape(n_samples, n_bands)
@@ -102,21 +147,18 @@ def ICA(hsi_image, gt):
     scaler = StandardScaler()
     hsi_image_scaled = scaler.fit_transform(hsi_image_reshaped)
 
-    # Apply ICA
-    ica = FastICA(random_state=42)
+    # Apply ICA with n_components=50
+    ica = FastICA(n_components=n_components, random_state=42)
     hsi_image_limited = ica.fit_transform(hsi_image_scaled)
 
     # Print the number of bands before and after applying ICA
     print(f"Number of bands before applying ICA: {n_bands}")
-    print(f"Number of components after applying ICA: {hsi_image_limited.shape[1]}")  # Print remaining components
-
+    print(f"Number of components after applying ICA: {hsi_image_limited.shape[1]}")  # Should print 50
 
     # Train the model
     oa, aa, kappa, total_time1, total_time2, cbc = model_train_test(hsi_image, gt, hsi_image_limited)
     
     return oa, aa, kappa, total_time1, total_time2, cbc, hsi_image_limited
-
-
 
 
 
