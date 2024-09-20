@@ -42,7 +42,7 @@ from collections import Counter
 
 
 # population size
-no_of_population = 40
+no_of_population = 20
 
 # percent of bands
 percent_of_bands = 80
