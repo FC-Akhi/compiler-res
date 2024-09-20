@@ -49,7 +49,7 @@ percent_of_bands = 80
 
 
 # generation size
-no_of_generations = 30
+no_of_generations = 10
 
 
 
@@ -176,8 +176,8 @@ def initial_model(hsi_image, gt, test_size=0.2, random_state=42):
         random_strength=2,
         l2_leaf_reg=1,
         task_type='GPU',
-        early_stopping_rounds=50,
-        verbose=100
+        early_stopping_rounds=None,
+        verbose=False
     )
 
 
@@ -323,16 +323,18 @@ def band_removal_and_model_train(hsi_image, gt, deleted_indices, test_size=0.2, 
         random_strength=2,
         l2_leaf_reg=1,
         task_type='GPU',
-        early_stopping_rounds=50,
-        verbose=5
+        early_stopping_rounds=None,
+        verbose=False
     )
 
     # Train the model on the SMOTE-balanced training data
     
     cbc.fit(X_train_smote, y_train_smote)
     
+    print("Training completed successfully.")
+
     # Debugging: Check the unique classes in the test data
-    print("Unique classes in test set:", np.unique(y_test))
+    # print("Unique classes in test set:", np.unique(y_test))
 
 
     # Test the model on the test set
@@ -409,7 +411,7 @@ def blackbox_function(band_combination, hsi_image, gt, feature_importance, test_
         random_strength=2,
         l2_leaf_reg=1,
         task_type='GPU',
-        early_stopping_rounds=50,
+        early_stopping_rounds=None,
         verbose=False  
     )
 
@@ -421,9 +423,9 @@ def blackbox_function(band_combination, hsi_image, gt, feature_importance, test_
     cbc.fit(X_train, y_train)  # train the classifier on the training set
     end_train_time = time.time()
     training_time = end_train_time - start_train_time
-
+    print("Training completed successfully.")
     # Debugging: Check the unique classes in the test data
-    print("Unique classes in test set:", np.unique(y_test))
+    # print("Unique classes in test set:", np.unique(y_test))
 
 
     # Test the model
@@ -432,7 +434,7 @@ def blackbox_function(band_combination, hsi_image, gt, feature_importance, test_
     end_test_time = time.time()
     testing_time = end_test_time - start_test_time
 
-    print("Unique classes predicted:", np.unique(y_pred))
+    # print("Unique classes predicted:", np.unique(y_pred))
 
     # Calculate metrics: OA, AA, and Kappa
     oa, aa, kappa = calculate_metrics(y_test, y_pred)
@@ -554,8 +556,6 @@ def genetic_algorithm(num_solutions, n_bands_per_solution, threshold_accuracy, n
     # Return the band combinations with accuracy
     return population, cbc
 
-
-print("Ground truth class distribution:", Counter(pavia_u_gt.flatten()))
 
 
 
