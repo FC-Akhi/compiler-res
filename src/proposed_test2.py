@@ -42,7 +42,7 @@ from collections import Counter
 
 
 # population size
-no_of_population = 20
+no_of_population = 40
 
 # percent of bands
 percent_of_bands = 80
@@ -177,7 +177,7 @@ def initial_model(hsi_image, gt, test_size=0.2, random_state=42):
         l2_leaf_reg=1,
         task_type='GPU',
         early_stopping_rounds=None,
-        verbose=500
+        verbose=False
     )
 
 
@@ -324,7 +324,7 @@ def band_removal_and_model_train(hsi_image, gt, deleted_indices, test_size=0.2, 
         l2_leaf_reg=1,
         task_type='GPU',
         early_stopping_rounds=None,
-        verbose=500
+        verbose=False
     )
 
     # Train the model on the SMOTE-balanced training data
@@ -412,7 +412,7 @@ def blackbox_function(band_combination, hsi_image, gt, feature_importance, test_
         l2_leaf_reg=1,
         task_type='GPU',
         early_stopping_rounds=None,
-        verbose=500  
+        verbose=False  
     )
 
     
@@ -491,7 +491,7 @@ def genetic_algorithm(num_solutions, n_bands_per_solution, threshold_accuracy, n
 
         # SELECTION: Keep the n-band combination if its accuracy is greater than the threshold accuracy
         if accuracy > threshold_accuracy:
-            population.append((band_combination, accuracy, test_time))
+            population.append((band_combination, accuracy, testing_time))
             # print("parent solution:", band_combination)
             # print("parents accuracy", accuracy)
             # print("parents test_time", test_time)
@@ -542,7 +542,7 @@ def genetic_algorithm(num_solutions, n_bands_per_solution, threshold_accuracy, n
 
             # SELECTION: Keep the offspring solution if its accuracy is greater than the threshold accuracy
             if accuracy > threshold_accuracy:
-                new_population.append((offspring, accuracy, test_time))
+                new_population.append((offspring, accuracy, testing_time))
                 # print("offspring combination:", offspring)
                 # print("offspring accuracy", accuracy)
                 # print("offspring test_time", test_time)
@@ -668,3 +668,4 @@ cbc_c.save_model('catboost_pavia_c_model.cbm')  # Saving the CatBoost model in a
 # Save the reduced set of bands
 with open('reduced_band_combination_c.pkl', 'wb') as f:
     pickle.dump(best_band_combination_c, f)
+
