@@ -92,29 +92,29 @@ def model_train_test(hsi_image, gt, hsi_image_limited, test_size=0.2, random_sta
 
 
 
-# # Function to apply ICA for dimensionality reduction
-# def ICA(hsi_image, gt):
-#     n_samples = hsi_image.shape[0] * hsi_image.shape[1]
-#     n_bands = hsi_image.shape[2]
-#     hsi_image_reshaped = hsi_image.reshape(n_samples, n_bands)
+# Function to apply ICA for dimensionality reduction
+def ICA(hsi_image, gt):
+    n_samples = hsi_image.shape[0] * hsi_image.shape[1]
+    n_bands = hsi_image.shape[2]
+    hsi_image_reshaped = hsi_image.reshape(n_samples, n_bands)
 
-#     # Standardize the data
-#     scaler = StandardScaler()
-#     hsi_image_scaled = scaler.fit_transform(hsi_image_reshaped)
+    # Standardize the data
+    scaler = StandardScaler()
+    hsi_image_scaled = scaler.fit_transform(hsi_image_reshaped)
 
-#     # Apply ICA
-#     ica = FastICA(random_state=42)
-#     hsi_image_limited = ica.fit_transform(hsi_image_scaled)
+    # Apply ICA
+    ica = FastICA(random_state=42)
+    hsi_image_limited = ica.fit_transform(hsi_image_scaled)
 
-#     # Print the number of bands before and after applying ICA
-#     print(f"Number of bands before applying ICA: {n_bands}")
-#     print(f"Number of components after applying ICA: {hsi_image_limited.shape[1]}")  # Print remaining components
+    # Print the number of bands before and after applying ICA
+    print(f"Number of bands before applying ICA: {n_bands}")
+    print(f"Number of components after applying ICA: {hsi_image_limited.shape[1]}")  # Print remaining components
 
 
-#     # Train the model
-#     oa, aa, kappa, total_time1, total_time2, cbc = model_train_test(hsi_image, gt, hsi_image_limited)
+    # Train the model
+    oa, aa, kappa, total_time1, total_time2, cbc = model_train_test(hsi_image, gt, hsi_image_limited)
     
-#     return oa, aa, kappa, total_time1, total_time2, cbc, hsi_image_limited
+    return oa, aa, kappa, total_time1, total_time2, cbc, hsi_image_limited
 
 
 

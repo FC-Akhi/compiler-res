@@ -49,7 +49,7 @@ percent_of_bands = 80
 
 
 # generation size
-no_of_generations = 10
+no_of_generations = 20
 
 
 
