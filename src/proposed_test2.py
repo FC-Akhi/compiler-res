@@ -177,7 +177,7 @@ def initial_model(hsi_image, gt, test_size=0.2, random_state=42):
         l2_leaf_reg=1,
         task_type='GPU',
         early_stopping_rounds=None,
-        verbose=False
+        verbose=500
     )
 
 
@@ -324,7 +324,7 @@ def band_removal_and_model_train(hsi_image, gt, deleted_indices, test_size=0.2, 
         l2_leaf_reg=1,
         task_type='GPU',
         early_stopping_rounds=None,
-        verbose=False
+        verbose=500
     )
 
     # Train the model on the SMOTE-balanced training data
@@ -412,7 +412,7 @@ def blackbox_function(band_combination, hsi_image, gt, feature_importance, test_
         l2_leaf_reg=1,
         task_type='GPU',
         early_stopping_rounds=None,
-        verbose=False  
+        verbose=500  
     )
 
     
