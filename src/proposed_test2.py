@@ -37,19 +37,19 @@ from collections import Counter  # To count occurrences of each class label
 # importing the 'accuracy_score' function from the 'sklearn' library for evaluating classification accuracy
 from matplotlib.colors import ListedColormap, BoundaryNorm
 from scipy.ndimage import median_filter
-
+from collections import Counter
 
 
 
 # population size
-no_of_population = 80
+no_of_population = 40
 
 # percent of bands
 percent_of_bands = 80
 
 
 # generation size
-no_of_generations = 160
+no_of_generations = 30
 
 
 
@@ -156,10 +156,16 @@ def initial_model(hsi_image, gt, test_size=0.2, random_state=42):
                                                         random_state=random_state)
     
 
+    # Debugging: Check class distribution before SMOTE
+    print("Class distribution before SMOTE (Training set):", Counter(y_train))
+
     # Apply SMOTE (Synthetic Minority Over-sampling Technique) to balance the training data
     X_train_smote, y_train_smote = apply_smote(X_train, y_train, random_state=random_state)
 
+    # Debugging: Check class distribution after SMOTE
+    print("Class distribution after SMOTE (Training set):", Counter(y_train_smote))
 
+    
 
     # Create CatBoost classifier
     cbc = CatBoostClassifier(
@@ -171,12 +177,17 @@ def initial_model(hsi_image, gt, test_size=0.2, random_state=42):
         l2_leaf_reg=1,
         task_type='GPU',
         early_stopping_rounds=50,
-        verbose=5
+        verbose=100
     )
 
 
     # Train the CatBoost model on the SMOTE-applied training data
     cbc.fit(X_train_smote, y_train_smote)
+
+    # Debugging: Check the unique classes in the test data and training data
+    print("Unique classes in training set after SMOTE:", np.unique(y_train_smote))
+    print("Unique classes in test set:", np.unique(y_test))
+
 
     # return the trained model
     return cbc
@@ -293,8 +304,15 @@ def band_removal_and_model_train(hsi_image, gt, deleted_indices, test_size=0.2, 
                                                         test_size=test_size, 
                                                         random_state=random_state)
 
+    # Debugging: Check class distribution before SMOTE after band removal
+    print("Class distribution before SMOTE (Training set after band removal):", Counter(y_train))
+    
     # Apply SMOTE to balance the training data
     X_train_smote, y_train_smote = apply_smote(X_train, y_train, random_state=random_state)
+
+    # Debugging: Check class distribution after SMOTE
+    print("Class distribution after SMOTE (Training set after band removal):", Counter(y_train_smote))
+
 
     # Create CatBoost classifier
     cbc = CatBoostClassifier(
@@ -313,6 +331,9 @@ def band_removal_and_model_train(hsi_image, gt, deleted_indices, test_size=0.2, 
     
     cbc.fit(X_train_smote, y_train_smote)
     
+    # Debugging: Check the unique classes in the test data
+    print("Unique classes in test set:", np.unique(y_test))
+
 
     # Test the model on the test set
     start = time.time()
@@ -320,6 +341,7 @@ def band_removal_and_model_train(hsi_image, gt, deleted_indices, test_size=0.2, 
     end = time.time()
     test_time = end - start  # Calculate the training time
 
+    print("Unique classes predicted:", np.unique(y_pred))
 
     # Calculate metrics: OA, AA, and Kappa
     oa, aa, kappa = calculate_metrics(y_test, y_pred)
@@ -400,11 +422,17 @@ def blackbox_function(band_combination, hsi_image, gt, feature_importance, test_
     end_train_time = time.time()
     training_time = end_train_time - start_train_time
 
+    # Debugging: Check the unique classes in the test data
+    print("Unique classes in test set:", np.unique(y_test))
+
+
     # Test the model
     start_test_time = time.time()
     y_pred = cbc.predict(X_test)
     end_test_time = time.time()
     testing_time = end_test_time - start_test_time
+
+    print("Unique classes predicted:", np.unique(y_pred))
 
     # Calculate metrics: OA, AA, and Kappa
     oa, aa, kappa = calculate_metrics(y_test, y_pred)
@@ -527,7 +555,7 @@ def genetic_algorithm(num_solutions, n_bands_per_solution, threshold_accuracy, n
     return population, cbc
 
 
-
+print("Ground truth class distribution:", Counter(pavia_u_gt.flatten()))
 
 
 
@@ -566,13 +594,13 @@ solutions_pavia_u, cbc_u = genetic_algorithm(
 best_solution = solutions_pavia_u[0]
 
 # Unpack the tuple from best_solution (contains band combination, accuracy, test time)
-best_band_combination = best_solution[0]  # This is the list of bands
+best_band_combination_u = best_solution[0]  # This is the list of bands
 accuracy = best_solution[1]               # This is the accuracy value
 test_time = best_solution[2]              # This is the test time value
 
 # Print out the details
-print("Best band combination:", best_band_combination)
-print("Number of bands:", len(best_band_combination))
+print("Best band combination:", best_band_combination_u)
+print("Number of bands:", len(best_band_combination_u))
 print(f"PU - Accuracy: {accuracy * 100:.2f}%")
 print(f"PU - time_train: {test_time} seconds")
 
@@ -582,7 +610,7 @@ cbc_u.save_model('catboost_pavia_u_model.cbm')  # Saving the CatBoost model in a
 
 # Save the reduced set of bands
 with open('reduced_band_combination_u.pkl', 'wb') as f:
-    pickle.dump(best_band_combination, f)
+    pickle.dump(best_band_combination_u, f)
 
 
 
@@ -623,15 +651,15 @@ solutions_pavia_c, cbc_c = genetic_algorithm(
 best_solution = solutions_pavia_c[0]
 
 # Unpack the tuple from best_solution (contains band combination, accuracy, test time)
-best_band_combination = best_solution[0]  # This is the list of bands
+best_band_combination_c = best_solution[0]  # This is the list of bands
 accuracy = best_solution[1]               # This is the accuracy value
 test_time = best_solution[2]              # This is the test time value
 
 # Print out the details
-print("Best band combination:", best_band_combination)
-print("Number of bands:", len(best_band_combination))
-print(f"PU - Accuracy: {accuracy * 100:.2f}%")
-print(f"PU - time_train: {test_time} seconds")
+print("Best band combination:", best_band_combination_c)
+print("Number of bands:", len(best_band_combination_c))
+print(f"PC - Accuracy: {accuracy * 100:.2f}%")
+print(f"PC - time_train: {test_time} seconds")
 
 # After training the model and obtaining the best solution
 # Save the trained CatBoost model
@@ -639,4 +667,4 @@ cbc_c.save_model('catboost_pavia_c_model.cbm')  # Saving the CatBoost model in a
 
 # Save the reduced set of bands
 with open('reduced_band_combination_c.pkl', 'wb') as f:
-    pickle.dump(best_band_combination, f)
+    pickle.dump(best_band_combination_c, f)
